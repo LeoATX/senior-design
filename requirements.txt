@@ -1,4 +1,8 @@
+jupyterlab
 keras >= 3
-tensorflow >= 2.16
+keras-cv
+keras-nlp
+matplotlib
 opencv-python
+tensorflow >= 2.16
 ultralytics
