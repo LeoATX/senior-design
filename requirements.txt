@@ -5,4 +5,5 @@ keras-nlp
 matplotlib
 opencv-python
 tensorflow >= 2.16
+tensorflow-text
 ultralytics
