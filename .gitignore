@@ -162,3 +162,4 @@ cython_debug/
 #.idea/
 
 text_classification/models/
+text_classification/all_csv
