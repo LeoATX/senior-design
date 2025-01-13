@@ -1,9 +1,13 @@
+google-auth  # 2.29
+google-cloud-speech  # 2.26
 jupyterlab
 keras >= 3
 keras-cv
 keras-nlp
 matplotlib
 opencv-python
+pyaudio
 tensorflow >= 2.16
 tensorflow-text
+transformers
 ultralytics
