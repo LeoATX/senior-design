@@ -163,3 +163,4 @@ cython_debug/
 
 text_classification/models/
 text_classification/all_csv
+text_classification/speech_api_keys.json
