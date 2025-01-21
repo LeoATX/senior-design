@@ -44,8 +44,8 @@ class DepthTo2DNavGoal:
         goal.header.stamp = rospy.Time.now()
 
         # Use depth value to set the goal's x position
-        goal.pose.position.x = depth_value/1000  # Forward distance in mm
-        goal.pose.position.y = 0.0  # Lateral offset (centered)
+        goal.pose.position.x = depth_value/1000-50/1000  # Forward distance in mm
+        goal.pose.position.y = 50.0/1000  # Lateral offset (centered) offset b/c drift
         goal.pose.position.z = 0.0  # Ground level
 
         # Set orientation to face forward
@@ -62,7 +62,7 @@ class DepthTo2DNavGoal:
         self.goal_published = True
 
         # Shut down the node after publishing the goal
-        rospy.signal_shutdown("2D Navigation Goal published, shutting down.")
+        #rospy.signal_shutdown("2D Navigation Goal published, shutting down.")
 
 if __name__ == "__main__":
     try:
