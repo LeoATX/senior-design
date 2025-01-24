@@ -5,9 +5,12 @@ from google.oauth2 import service_account
 from google.cloud import speech
 from transformers import TFAutoModelForSequenceClassification, AutoTokenizer
 import tensorflow as tf
+import dotenv
+import os
 
 sentence = ""
 
+dotenv.load_dotenv('../.env')
 client_file = 'text_classification/speech_api_keys.json'
 credentials = service_account.Credentials.from_service_account_file(client_file)
 

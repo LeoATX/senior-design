@@ -1,4 +1,3 @@
-import multiprocessing
 import multiprocessing.connection
 
 def f(conn: multiprocessing.connection.Connection):

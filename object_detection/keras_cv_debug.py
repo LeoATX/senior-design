@@ -19,7 +19,10 @@ def inference(debug: bool = True, conn: multiprocessing.connection.Connection = 
     #     bounding_box_format='XYWH'
     # )
 
-    model = keras_cv.models.YOLOV8Detector.from_preset('yolo_v8_m_pascalvoc')
+    model = keras_cv.models.YOLOV8Detector.from_preset(
+        preset='yolo_v8_m_pascalvoc', 
+        load_weights=True
+    )
 
     image1 = keras.utils.load_img(
         path=os.path.join(os.path.dirname(

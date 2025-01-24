@@ -25,6 +25,29 @@ def inference(debug: bool = True, conn: multiprocessing.connection.Connection = 
     )
     video = cv2.VideoCapture(0)
 
+    class_ids = [
+        'Aeroplanes',
+        'Bicycles',
+        'Birds',
+        'Boats',
+        'Bottles',
+        'Buses',
+        'Cars',
+        'Cats',
+        'Chairs',
+        'Cows',
+        'Dining tables',
+        'Dogs',
+        'Horses',
+        'Motorbikes',
+        'People',
+        'Potted plants',
+        'Sheep',
+        'Sofas',
+        'Trains',
+        'TV/Monitors'
+    ]
+
     while True:
         _, frame = video.read()
 
@@ -52,7 +75,7 @@ def inference(debug: bool = True, conn: multiprocessing.connection.Connection = 
             box_class = predictions['classes'][0][index]
 
             # Draw bounding box and label on the frame
-            label = f'{box_class}: {box_conf}'
+            label = f'{class_ids[box_class]}: {box_conf}'
             cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 0, 0), 2)
             cv2.putText(frame, label, (x, y - 10),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
