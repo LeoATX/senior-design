@@ -1,8 +1,10 @@
 #!/usr/bin/env python
 
 import rospy
+import tf2_ros
+import tf2_geometry_msgs
 from std_msgs.msg import Float32
-from geometry_msgs.msg import PoseStamped
+from geometry_msgs.msg import PoseStamped, TransformStamped
 
 class DepthTo2DNavGoal:
     def __init__(self):
@@ -10,13 +12,17 @@ class DepthTo2DNavGoal:
 
         # Parameters
         self.goal_topic = rospy.get_param("~goal_topic", "/move_base_simple/goal")  # 2D Nav Goal topic
-        self.base_frame = rospy.get_param("~base_frame", "base_link")  # Frame of reference (base_link)
-        self.xy_coordinate = rospy.get_param("~xy_coordinate", [320, 240])  # Pixel location in the depth image
+        self.base_frame = rospy.get_param("~base_frame", "base_link")  # LIMO's base frame
+        self.map_frame = "map"  # Global frame
 
         # State to track if the goal is already published
         self.goal_published = False
 
-        # Subscriber for the depth value at the specified coordinate
+        # TF2 listener
+        self.tf_buffer = tf2_ros.Buffer()
+        self.tf_listener = tf2_ros.TransformListener(self.tf_buffer)
+
+        # Subscriber for depth value at the specified coordinate
         self.depth_sub = rospy.Subscriber("/depth_at_coordinate", Float32, self.depth_callback)
 
         # Publisher for the 2D navigation goal
@@ -25,27 +31,26 @@ class DepthTo2DNavGoal:
         rospy.loginfo("Depth to 2D Navigation Goal initialized.")
 
     def depth_callback(self, msg):
-        # Check if the goal has already been published
         if self.goal_published:
             rospy.loginfo("2D Navigation Goal already published. Ignoring further depth data.")
             return
 
-        # Process the depth value and create the navigation goal
-        depth_value = msg.data
-        rospy.loginfo(f"Received depth value: {depth_value} mm.")
+        # Get the depth value (in mm) and convert it to meters
+        depth_value = msg.data / 1000.0  # Convert mm to meters
+        rospy.loginfo(f"Received depth value: {depth_value:.3f} meters.")
 
         if depth_value <= 0:
             rospy.logwarn("Depth value is invalid or zero. Ignoring.")
             return
 
-        # Create a PoseStamped message for the goal
+        # Create a PoseStamped message in the base_link frame
         goal = PoseStamped()
-        goal.header.frame_id = 'base_link'  # Set the frame of reference to the map
+        goal.header.frame_id = self.base_frame  # Start in base_link frame
         goal.header.stamp = rospy.Time.now()
 
-        # Use depth value to set the goal's x position
-        goal.pose.position.x = depth_value/1000-50/1000  # Forward distance in mm
-        goal.pose.position.y = 50.0/1000  # Lateral offset (centered) offset b/c drift
+        # Set the position in front of the robot
+        goal.pose.position.x = depth_value-40/1000  # Forward distance in meters
+        goal.pose.position.y = 0.0  # Lateral offset (centered)
         goal.pose.position.z = 0.0  # Ground level
 
         # Set orientation to face forward
@@ -54,15 +59,28 @@ class DepthTo2DNavGoal:
         goal.pose.orientation.z = 0.0
         goal.pose.orientation.w = 1.0
 
-        # Publish the goal to RViz
-        self.goal_pub.publish(goal)
-        rospy.loginfo(f"Published 2D Navigation Goal: x={goal.pose.position.x}, y={goal.pose.position.y}, frame_id={self.base_frame}")
+        try:
+            # Get the latest transform from base_link to map
+            transform: TransformStamped = self.tf_buffer.lookup_transform(self.map_frame, self.base_frame, rospy.Time(0), rospy.Duration(1.0))
 
-        # Mark the goal as published
-        self.goal_published = True
+            # Transform the goal from base_link frame to map frame
+            transformed_goal = tf2_geometry_msgs.do_transform_pose(goal, transform)
+            transformed_goal.header.frame_id = self.map_frame
 
-        # Shut down the node after publishing the goal
-        #rospy.signal_shutdown("2D Navigation Goal published, shutting down.")
+            # Publish the transformed goal
+            self.goal_pub.publish(transformed_goal)
+            rospy.loginfo(f"Published 2D Navigation Goal in map frame: x={transformed_goal.pose.position.x:.2f}, y={transformed_goal.pose.position.y:.2f}")
+
+            # Mark as published
+            self.goal_published = True
+
+            # Shut down after publishing the goal
+            rospy.signal_shutdown("2D Navigation Goal published, shutting down.")
+
+        except tf2_ros.LookupException:
+            rospy.logerr("TF LookupException: Unable to get transform from base_link to map.")
+        except tf2_ros.ExtrapolationException:
+            rospy.logerr("TF ExtrapolationException: Timestamp mismatch in transform.")
 
 if __name__ == "__main__":
     try:
