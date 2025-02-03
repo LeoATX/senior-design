@@ -3,6 +3,7 @@ import keras
 import keras_cv
 import multiprocessing.connection
 
+
 def inference(debug: bool = True, conn: multiprocessing.connection.Connection = None):
     debug = False
 
@@ -19,9 +20,17 @@ def inference(debug: bool = True, conn: multiprocessing.connection.Connection = 
     #     num_classes=80,
     #     bounding_box_format='XYXY'
     # )
-    model = keras_cv.models.YOLOV8Detector.from_preset(
-        preset='yolo_v8_m_pascalvoc',
-        load_weights=True
+    # model = keras_cv.models.YOLOV8Detector.from_preset(
+    #     preset='yolo_v8_m_pascalvoc',
+    #     load_weights=True
+    # )
+    model = keras_cv.models.YOLOV8Detector(
+        backbone=keras_cv.models.YOLOV8Backbone.from_preset(
+            preset='yolo_v8_s_backbone_coco',
+            load_weights=True
+        ),
+        num_classes=80,
+        bounding_box_format='XYWH'
     )
     video = cv2.VideoCapture(0)
 
@@ -75,7 +84,8 @@ def inference(debug: bool = True, conn: multiprocessing.connection.Connection = 
             box_class = predictions['classes'][0][index]
 
             # Draw bounding box and label on the frame
-            label = f'{class_ids[box_class]}: {box_conf}'
+            # label = f'{class_ids[box_class]}: {box_conf}'
+            label = f'{box_class}: {box_conf}'
             cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 0, 0), 2)
             cv2.putText(frame, label, (x, y - 10),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
@@ -88,6 +98,7 @@ def inference(debug: bool = True, conn: multiprocessing.connection.Connection = 
 
     video.release()
     cv2.destroyAllWindows()
+
 
 if __name__ == '__main__':
     inference()
