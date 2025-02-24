@@ -7,6 +7,8 @@ from transformers import TFAutoModelForSequenceClassification, AutoTokenizer
 import tensorflow as tf
 import dotenv
 import os
+import wave
+import numpy as np
 
 sentence = ""
 
@@ -34,6 +36,14 @@ def generate_audio_chunks(stream):
             break
         yield speech.StreamingRecognizeRequest(audio_content=data)
         time.sleep(0.1)
+
+def save_audio_to_wav(audio_samples, filename="debug_audio.wav"):
+    """Saves recorded audio samples to a WAV file for debugging."""
+    with wave.open(filename, "wb") as wf:
+        wf.setnchannels(1)
+        wf.setsampwidth(2)  # 16-bit PCM
+        wf.setframerate(RATE)
+        wf.writeframes(audio_samples.astype(np.int16).tobytes())
 
 try:
     stream = audio_interface.open(format=pyaudio.paInt16, channels=1, rate=RATE, input=True, frames_per_buffer=CHUNK)

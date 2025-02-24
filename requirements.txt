@@ -14,3 +14,6 @@ tensorflow-text
 transformers
 ultralytics
 tf-keras
+nemo_toolkit[asr]
+Cython
+openai-whisper
