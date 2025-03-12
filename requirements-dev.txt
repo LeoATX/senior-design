@@ -1,20 +1,20 @@
 google-auth  # 2.29
 google-cloud-speech  # 2.26
 jupyterlab
-# keras >= 3
-# keras-cv
-# keras-nlp
+keras >= 3
+keras-cv
+keras-nlp
 matplotlib
 opencv-python
 pillow
 pyaudio
 python-dotenv
-# tensorflow >= 2.16
-# tensorflow-text
+tensorflow >= 2.16
+tensorflow-text
 transformers
 ultralytics
-# tf-keras
-# nemo_toolkit[asr]
+tf-keras
+nemo_toolkit[asr]
 Cython
 openai-whisper
 flask
