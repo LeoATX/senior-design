@@ -56,7 +56,8 @@ def run_workflow(
     status_message.value = status
 
     # How can I receive a command from the flask server to begin the workflow?
-    start_event.wait()
+    # TODO
+    # start_event.wait()
 
     p = pyaudio.PyAudio()
     info = p.get_host_api_info_by_index(0)
@@ -212,10 +213,12 @@ if __name__ == '__main__':
 
     start_event = multiprocessing.Event()
     status_message = multiprocessing.Manager().Value('s', 'Workflow not started')
-    multiprocessing.Process(
-        target=run_workflow, args=(start_event, status_message, )
-    ).start()
+    # multiprocessing.Process(
+    #     target=run_workflow, args=(start_event, status_message, )
+    # ).start()
+    run_workflow(start_event, status_message)
 
+    """
     app = flask.Flask(__name__)
 
     @app.route('/')
@@ -261,10 +264,22 @@ if __name__ == '__main__':
         return json.dumps({'status': status_message.value})
 
     app.logger.setLevel('ERROR')
-    app.run(host='0.0.0.0', port=8080, debug=False)
+    app.run(host='0.0.0.0', port=8080, debug=False)"
+    """
     
     # input('Press Enter to start the workflow...')
     # start_event.set()
 
     # threading.Thread(target=run_workflow).start()
-    # run_workflow()
+    # run_workflow()"
+
+    # Write the center coordinates to a file
+    # with open('elapsed_time.txt', 'w') as f:
+    #     f.write(f"Time: {elapsed_time}\n")
+
+    # with open('center_coordinates.txt', 'w') as f:
+    #     f.write(f"Center of bounding box: ({center_x}, {center_y})\n")
+
+    # # Inside text_and_obj.py
+    # with open('script_done.txt', 'w') as f:
+    #     f.write('Done\n')
