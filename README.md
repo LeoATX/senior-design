@@ -68,6 +68,8 @@ Run the following commands in the terminal in the specified sequence:
 - Replace `"script_folder"` with the actual path or package name containing your custom scripts.
 - Ensure all required ROS packages are installed before running the commands.
 
+- In full flow, initializing the models take about 9 seconds.
+
 ## License
 This project is licensed under the MIT License. See the LICENSE file for details.
 
@@ -77,4 +79,3 @@ Feel free to open issues or submit pull requests for improvements or bug fixes.
 ## Acknowledgments
 - AgileX Robotics for the LIMO Pro Cobot
 - ROS Community for the support and tools used in this project
-

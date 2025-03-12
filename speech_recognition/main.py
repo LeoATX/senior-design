@@ -21,4 +21,4 @@ if __name__ == '__main__':
     openai_start = time.time()
     transcript = openai_asr.transcribe('speech_recognition/audio1.wav')
     print(transcript['text'])
-    print('openai:', time.time() - nvidia_start)
+    print('openai:', time.time() - openai_start)

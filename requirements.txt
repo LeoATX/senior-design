@@ -17,3 +17,4 @@ tf-keras
 nemo_toolkit[asr]
 Cython
 openai-whisper
+flask
