@@ -57,7 +57,7 @@ def run_workflow(
 
     # How can I receive a command from the flask server to begin the workflow?
     # TODO
-    # start_event.wait()
+    start_event.wait()
 
     p = pyaudio.PyAudio()
     info = p.get_host_api_info_by_index(0)
@@ -213,12 +213,12 @@ if __name__ == '__main__':
 
     start_event = multiprocessing.Event()
     status_message = multiprocessing.Manager().Value('s', 'Workflow not started')
-    # multiprocessing.Process(
-    #     target=run_workflow, args=(start_event, status_message, )
-    # ).start()
-    run_workflow(start_event, status_message)
+    multiprocessing.Process(
+        target=run_workflow, args=(start_event, status_message, )
+    ).start()
+    # run_workflow(start_event, status_message)
 
-    """
+    
     app = flask.Flask(__name__)
 
     @app.route('/')
@@ -264,8 +264,8 @@ if __name__ == '__main__':
         return json.dumps({'status': status_message.value})
 
     app.logger.setLevel('ERROR')
-    app.run(host='0.0.0.0', port=8080, debug=False)"
-    """
+    app.run(host='0.0.0.0', port=8080, debug=False)
+    
     
     # input('Press Enter to start the workflow...')
     # start_event.set()
