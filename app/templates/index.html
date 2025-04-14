@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Workflow Starter</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <h1>Workflow Starter</h1>
+    <button id="start-button" onclick="startWorkflow()" disabled>Start Workflow</button>
+    <div id="message" style="margin-top: 20px; font-weight: bold;"></div>
+    <div id="status" style="margin-top: 20px; font-weight: bold;"></div>
+
+    <script>
+        function startWorkflow() {
+            const button = document.getElementById("start-button");
+            const messageDiv = document.getElementById('message');
+
+            button.disabled = true;
+            messageDiv.innerText = 'Starting workflow...';
+
+            fetch('/start_workflow', { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    messageDiv.innerText = data.message;
+                })
+                .catch(() => {
+                    messageDiv.innerText = 'Failed to start workflow.';
+                    button.disabled = false;
+                });
+        }
+
+        setInterval(function () {
+            fetch('/status')
+                .then(response => response.json())
+                .then(data => {
+                    const statusDiv = document.getElementById('status');
+                    const button = document.getElementById('start-button');
+                    statusDiv.innerText = data.status;
+
+                    // Avoid quotes in the string
+                    if (data.status === 'Click the Start Workflow button to start.') {
+                        button.disabled = false;
+                    } else {
+                        button.disabled = true;
+                    }
+                });
+        }, 1000);
+    </script>
+</body>
+</html>
