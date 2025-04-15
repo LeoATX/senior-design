@@ -15,33 +15,50 @@ import time
 import warnings
 import whisper
 import json
+from google.oauth2 import service_account
+from google.cloud import speech
 
 # HARDCORE debug mode
 DEBUG = False
 
-# Record audio from the microphone using PyAudio until a pause is detected
-CHUNK = 1024
-FORMAT = pyaudio.paInt16
-CHANNELS = 1
-RATE = 44100
-SILENCE_THRESHOLD = 500  # Adjust this value based on microphone sensitivity
-SILENCE_CHUNKS = 50      # Number of consecutive silent chunks to detect a pause
+client_file = '/Users/lauren/Desktop/senior-design-april/app/speech_api_keys.json'
+credentials = service_account.Credentials.from_service_account_file(client_file)
 
+RATE = 16000
+CHUNK = int(RATE / 10)
+audio_interface = pyaudio.PyAudio()
+
+config = speech.RecognitionConfig(
+    encoding=speech.RecognitionConfig.AudioEncoding.LINEAR16,
+    sample_rate_hertz=RATE,
+    language_code='en-US'
+)
+streaming_config = speech.StreamingRecognitionConfig(config=config, interim_results=True)
 
 LABELS = {0: 'cup', 1: 'bottle', 2: 'fork', 3: 'cell phone', 4: 'neutral'}
 YOLO_CLASSES = {'cup': 41, 'bottle': 39, 'fork': 42, 'cell phone': 67}
-
 
 def run_workflow(
     start_event: multiprocessing.synchronize.Event,
     status_message: multiprocessing.sharedctypes.Synchronized
 ):
+    def generate_audio_chunks(stream):
+        for _ in range(100):
+            if not stream.is_active():
+                break
+            try:
+                data = stream.read(CHUNK, exception_on_overflow=False)
+                if not data:
+                    break
+                yield speech.StreamingRecognizeRequest(audio_content=data)
+                time.sleep(0.1)
+            except OSError:
+                break
     # instantiate the models at startup
     status = 'Loading models, please wait...'
     status_message.value = status
     print(status)
     start_time = time.time()
-    whisper_model = whisper.load_model('base')
     model_save_path = '../trained_v10'
     text_model = TFAutoModelForSequenceClassification.from_pretrained(
         model_save_path)
@@ -61,46 +78,31 @@ def run_workflow(
         start_event.clear()
 
         try:
-            status_message.value = 'Recording... Please speak into the microphone.'
-            time.sleep(0.5)
-            p = pyaudio.PyAudio()
-            # Find a working input device
-            input_device_index = None
-            for i in range(p.get_device_count()):
-                dev = p.get_device_info_by_index(i)
-                if dev['maxInputChannels'] >= CHANNELS:
-                    input_device_index = i
-                    print(f"Using input device: {dev['name']} (index {i})")
-                    break
-
-            if input_device_index is None:
-                raise RuntimeError("No valid input device found.")
-
-            stream = p.open(format=FORMAT, channels=CHANNELS, rate=RATE,
-                            input=True, frames_per_buffer=CHUNK, input_device_index=input_device_index)
-            frames = []
-            silence_counter = 0
-            while True:
-                data = stream.read(CHUNK)
-                frames.append(data)
-                samples = np.frombuffer(data, dtype=np.int16).astype(np.float32)
-                rms = np.sqrt(np.mean(samples**2))
-                if rms < SILENCE_THRESHOLD:
-                    silence_counter += 1
-                else:
-                    silence_counter = 0
-                if silence_counter > SILENCE_CHUNKS:
-                    break
-            stream.stop_stream()
-            stream.close()
-            p.terminate()
-            status_message.value = 'Recording stopped.'
-
-            audio_np = np.frombuffer(b''.join(frames), dtype=np.int16).astype(np.float32) / 32768.0
-            audio_np = librosa.resample(audio_np, orig_sr=RATE, target_sr=16000)
-            result = whisper_model.transcribe(audio_np)
-            sentence = result['text'].strip()
-            status_message.value = f'Transcript: {sentence}'
+            sentence = ""
+            try:
+                stream = audio_interface.open(format=pyaudio.paInt16, channels=1, rate=RATE, input=True, frames_per_buffer=CHUNK, start=False)
+                stream.start_stream()
+                with speech.SpeechClient(credentials=credentials) as client:
+                    status_message.value = 'Recording... Please speak into the microphone.'
+                    print("Listening... Say the object to detect.")
+                    responses = client.streaming_recognize(config=streaming_config, requests=generate_audio_chunks(stream))
+                    for response in responses:
+                        for result in response.results:
+                            if result.is_final:
+                                sentence = result.alternatives[0].transcript
+                                status_message.value = f'Transcript: {sentence}'
+                                print("Transcript:", sentence)
+                                raise StopIteration
+            except StopIteration:
+                print("Processing the detected speech...")
+            except KeyboardInterrupt:
+                print("Stopped by user.")
+            finally:
+                if 'stream' in locals() and stream is not None:
+                    if stream.is_active():
+                        stream.stop_stream()
+                    stream.close()
+                #audio_interface.terminate()
 
             inputs = tokenizer(sentence, return_tensors='tf')
             outputs = text_model(**inputs)
@@ -157,7 +159,6 @@ def run_workflow(
         except Exception as e:
             print(f"Exception during workflow: {e}")
             status_message.value = f'Error: {str(e)}'
-
 
 if __name__ == '__main__':
 

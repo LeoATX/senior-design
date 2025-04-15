@@ -2,6 +2,7 @@ text_classification/models/
 text_classification/all_csv
 text_classification/speech_api_keys.json
 app/trained_v10
+app/speech_api_keys.json
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
